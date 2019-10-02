@@ -1,4 +1,4 @@
-package com.billdoor.feign.interceptors;
+package com.luckylukas.feign.interceptors;
 
 import feign.RequestInterceptor;
 import feign.RequestTemplate;

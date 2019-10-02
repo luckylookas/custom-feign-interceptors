@@ -1,15 +1,16 @@
-package com.billdoor.feign;
+package com.luckylukas.feign;
 
-import com.billdoor.feign.clients.ribbon.TestClientSingleInterceptorRibbon;
-import com.billdoor.feign.interceptors.SecondInterceptor;
-import com.billdoor.feign.interceptors.FirstInterceptor;
 import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
+import com.luckylukas.feign.clients.ribbon.TestClientSingleInterceptorRibbon;
+import com.luckylukas.feign.interceptors.FirstInterceptor;
+import com.luckylukas.feign.interceptors.SecondInterceptor;
 import com.netflix.loadbalancer.Server;
 import com.netflix.loadbalancer.ServerList;
 import feign.Client;
 import feign.Feign;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,12 +21,12 @@ import org.springframework.cloud.contract.wiremock.WireMockSpring;
 import org.springframework.cloud.netflix.ribbon.RibbonAutoConfiguration;
 import org.springframework.cloud.netflix.ribbon.SpringClientFactory;
 import org.springframework.cloud.netflix.ribbon.StaticServerList;
-import org.springframework.cloud.openfeign.FeignAutoConfiguration;
 import org.springframework.cloud.openfeign.ribbon.CachingSpringLoadBalancerFactory;
 import org.springframework.cloud.openfeign.ribbon.FeignRibbonClientAutoConfiguration;
 import org.springframework.cloud.openfeign.ribbon.LoadBalancerFeignClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -40,20 +41,19 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @TestPropertySource(properties = {
-        "com.feign.base-package=com.billdoor.feign.clients.ribbon",
+        "com.feign.base-package=com.luckylukas.feign.clients.ribbon",
         })
 @EnableAutoConfiguration
 @ContextConfiguration(classes = {
         RibbonAutoConfiguration.class,
         FeignRibbonClientAutoConfiguration.class,
-        FeignAutoConfiguration.class,
-        FeignClientRegistrar.class,
-        FeignClientRegistrarRibbonIT.RibbonFeignTestConfiguration.class
+        FeignClientRegistrarAutoConfiguration.class,
+        FeignClientRegistrarAutoConfigurationRibbonIT.RibbonFeignTestConfiguration.class,
 })
-public class FeignClientRegistrarRibbonIT {
+public class FeignClientRegistrarAutoConfigurationRibbonIT {
 
     @ClassRule
-    public static WireMockClassRule WIREMOCK = new WireMockClassRule(WireMockSpring.options().dynamicPort());
+    public static WireMockClassRule wiremockRule = new WireMockClassRule(WireMockSpring.options().dynamicPort());
 
     @MockBean
     FirstInterceptor firstInterceptor;
@@ -65,7 +65,7 @@ public class FeignClientRegistrarRibbonIT {
 
     @Before
     public void init() {
-        WIREMOCK.stubFor(get(anyUrl()).willReturn(aResponse().withStatus(200)));
+        wiremockRule.stubFor(get(anyUrl()).willReturn(aResponse().withStatus(200)));
     }
 
     @Test
@@ -75,15 +75,17 @@ public class FeignClientRegistrarRibbonIT {
         verify(firstInterceptor).apply(any());
     }
 
+    @Ignore("test configuration")
     @Configuration
     public static class RibbonFeignTestConfiguration {
 
         @Bean
         public ServerList<Server> ribbonServerList() {
-            return new StaticServerList<>(new Server("localhost", WIREMOCK.port()));
+            return new StaticServerList<>(new Server("localhost", wiremockRule.port()));
         }
 
         @Bean
+        @Primary
         Feign.Builder getLoadBalancingFeignBuilder(SpringClientFactory springClientFactory,
                                                    CachingSpringLoadBalancerFactory loadBalancerFactory) {
             return Feign.builder()

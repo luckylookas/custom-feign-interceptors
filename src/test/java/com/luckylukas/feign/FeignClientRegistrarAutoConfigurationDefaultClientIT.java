@@ -1,14 +1,14 @@
-package com.billdoor.feign;
+package com.luckylukas.feign;
 
-import com.billdoor.feign.clients.defaultClient.TestClientSingleInterceptorDefault;
-import com.billdoor.feign.clients.ribbon.TestClientSingleInterceptorRibbon;
-import com.billdoor.feign.interceptors.FirstInterceptor;
-import com.billdoor.feign.interceptors.SecondInterceptor;
 import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
+import com.luckylukas.feign.clients.defaultClient.TestClientSingleInterceptorDefault;
+import com.luckylukas.feign.interceptors.FirstInterceptor;
+import com.luckylukas.feign.interceptors.SecondInterceptor;
 import com.netflix.loadbalancer.Server;
 import com.netflix.loadbalancer.ServerList;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +17,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cloud.contract.wiremock.WireMockSpring;
 import org.springframework.cloud.netflix.ribbon.StaticServerList;
+import org.springframework.cloud.openfeign.FeignClientProperties;
+import org.springframework.cloud.openfeign.FeignClientsConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
@@ -33,17 +35,19 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @TestPropertySource(properties = {
-        "com.feign.base-package=com.billdoor.feign.clients.defaultClient"
+        "com.feign.base-package=com.luckylukas.feign.clients.defaultClient"
 })
 @EnableAutoConfiguration
 @ContextConfiguration(classes = {
-        FeignClientRegistrarDefaultClientIT.DefaultFeignTestConfiguration.class,
-        FeignClientRegistrar.class
+        FeignClientProperties.FeignClientConfiguration.class,
+        FeignClientsConfiguration.class,
+        FeignClientRegistrarAutoConfigurationDefaultClientIT.DefaultFeignTestConfiguration.class,
+        FeignClientRegistrarAutoConfiguration.class
 })
-public class FeignClientRegistrarDefaultClientIT {
+public class FeignClientRegistrarAutoConfigurationDefaultClientIT {
 
     @ClassRule
-    public static WireMockClassRule WIREMOCK = new WireMockClassRule(WireMockSpring.options().port(9999));
+    public static WireMockClassRule wiremockRule = new WireMockClassRule(WireMockSpring.options().port(9999));
 
     @MockBean
     FirstInterceptor firstInterceptor;
@@ -55,7 +59,7 @@ public class FeignClientRegistrarDefaultClientIT {
 
     @Before
     public void init() {
-        WIREMOCK.stubFor(get(anyUrl()).willReturn(aResponse().withStatus(200)));
+        wiremockRule.stubFor(get(anyUrl()).willReturn(aResponse().withStatus(200)));
     }
 
     @Test
@@ -66,10 +70,11 @@ public class FeignClientRegistrarDefaultClientIT {
     }
 
     @Configuration
+    @Ignore("test configuration")
     public static class DefaultFeignTestConfiguration {
         @Bean
         public ServerList<Server> ribbonServerList() {
-            return new StaticServerList<>(new Server("localhost", WIREMOCK.port()));
+            return new StaticServerList<>(new Server("localhost", wiremockRule.port()));
         }
     }
 }

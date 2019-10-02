@@ -1,4 +1,4 @@
-package com.billdoor.feign;
+package com.luckylukas.feign;
 
 import feign.RequestInterceptor;
 import org.springframework.core.annotation.AliasFor;
@@ -11,6 +11,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @java.lang.annotation.Target(TYPE)
 @Retention(RUNTIME)
 public @interface InterceptedFeignClient {
+
     @AliasFor("target")
     String value() default "";
 
